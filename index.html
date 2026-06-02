@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seydişehir İtfaiyesi - İzin Takip Sistemi</title>
+    <style>
+        /* ==========================================
+           1. GENEL TASARIM VE KURUMSAL RENKLER
+           ========================================== */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fcfcfc;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .ust-bar {
+            background-color: #d32f2f; /* Bayrak Kırmızısı */
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .ana-kapsayici {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        /* ==========================================
+           2. NET PERSONEL KARTLARI (DPI/BULANIKLIK SORUNSUZ)
+           ========================================== */
+        .arama-kutusu {
+            width: 100%;
+            max-width: 500px;
+            display: block;
+            margin: 0 auto 25px auto;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 2px solid #d32f2f;
+            border-radius: 25px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .kartlar-alani {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .personel-kart {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            padding: 20px;
+            position: relative;
+            border-left: 6px solid #d32f2f;
+        }
+        .personel-isim {
+            font-size: 18px;
+            font-weight: bold;
+            color: #111;
+            margin-bottom: 5px;
+        }
+        .personel-detay {
+            font-size: 14px;
+            color: #666;
+            margin: 4px 0;
+        }
+        .vardiya-rozet {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #d32f2f;
+            color: white;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .izin-sayac {
+            margin-top: 15px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #c62828;
+            background-color: #ffebee;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .btn-grup {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            border: none;
+        }
+        .btn-kirmizi { background-color: #d32f2f; color: white; }
+        .btn-beyaz { background-color: white; color: #d32f2f; border: 2px solid #d32f2f; }
+
+        /* ==========================================
+           3. DOKUNMATİK UYUMLU İZİN GİRİŞ MODALİ
+           ========================================== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-icerik {
+            background-color: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box;
+            border-top: 6px solid #d32f2f;
+        }
+        .form-grup { margin-bottom: 15px; }
+        label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #444; }
+        select, input {
+            width: 100%; padding: 10px; font-size: 15px;
+            border: 2px solid #ccc; border-radius: 6px; box-sizing: border-box;
+        }
+        select:focus, input:focus { border-color: #d32f2f; outline: none; }
+        .ozet-kutusu {
+            background-color: #ffebee; padding: 12px; border-radius: 6px; margin-top: 15px;
+            font-size: 14px; border: 1px solid #ffcdd2;
+        }
+        .ozet-satir { display: flex; justify-content: space-between; margin-bottom: 4px; }
+
+        /* ==========================================
+           4. MİLİMETRİK RESMİ A5 BASKI FORMATI
+           ========================================== */
+        #baski-alani { display: none; }
+        @media print {
+            body * { display: none !important; }
+            #baski-alani, #baski-alani * { display: block !important; }
+            #baski-alani {
+                display: block !important;
+                position: absolute; left: 0; top: 0; width: 100%;
+                font-family: "Times New Roman", Times, serif !important;
+                font-size: 11pt !important; line-height: 1.6 !important; color: #000 !important;
+            }
+            @page { size: A5; margin: 15mm 10mm 15mm 10mm; }
+            .baski-baslik { text-align: center; font-weight: bold; font-size: 12pt; margin-bottom: 25mm; text-transform: uppercase; }
+            .baski-metin { text-align: justify; text-indent: 1cm; margin-bottom: 20mm; }
+            .baski-imza-kapsam { width: 100%; margin-bottom: 25mm; display: table; }
+            .baski-sol { display: table-cell; width: 50%; text-align: left; vertical-align: top; }
+            .baski-sag { display: table-cell; width: 50%; text-align: right; vertical-align: top; padding-right: 5mm; }
+            .baski-kalin { font-weight: bold; }
+            .baski-adres { border-top: 1px solid #ccc; padding-top: 3mm; font-size: 9.5pt; position: absolute; bottom: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ÜST PANEL -->
+    <div class="ust-bar">SEYDİŞEHİR İTFAİYE BİRİMİ - İZİN YÖNETİM PANELİ</div>
+    
+    <div class="ana-kapsayici">
+        <input type="text" class="arama-kutusu" placeholder="Personel ismi veya sicil no ara...">
+        
+        <div class="kartlar-alani">
+            <!-- 1. Personel Kartı -->
+            <div class="personel-kart">
+                <div class="vardiya-rozet">Grup 3</div>
+                <div class="personel-isim">Abdulkadir YÜKSEL</div>
+                <div class="personel-detay"><strong>Sicil No:</strong> 1234</div>
+                <div class="personel-detay"><strong>Unvan:</strong> İtfaiye Şoförü</div>
+                <div class="personel-detay"><strong>Statü:</strong> Şirket İşçisi (4A)</div>
+                <div class="izin-sayac">Kalan Yıllık İzin: 24 Gün</div>
+                <div class="btn-grup">
+                    <button class="btn btn-kirmizi" onclick="izinFormuAc('Abdulkadir YÜKSEL', 'İtfaiye Şoförü')">İzin Yaz</button>
+                </div>
+            </div>
+
+            <!-- 2. Personel Kartı -->
+            <div class="personel-kart" style="border-left-color: #b71c1c;">
+                <div class="vardiya-rozet">Amirlik</div>
+                <div class="personel-isim">Fatih KARA</div>
+                <div class="personel-detay"><strong>Sicil No:</strong> 5678</div>
+                <div class="personel-detay"><strong>Unvan:</strong> Seydişehir İlçe Amiri</div>
+                <div class="personel-detay"><strong>Statü:</strong> Memur</div>
+                <div class="izin-sayac">Kalan Yıllık İzin: 30 Gün</div>
+                <div class="btn-grup">
+                    <button class="btn btn-kirmizi" onclick="izinFormuAc('Fatih KARA', 'Seydişehir İlçe Amiri')">İzin Yaz</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DİNAMİK İZİN MODALİ -->
+    <div id="izinModal" class="modal">
+        <div class="modal-icerik">
+            <h3 style="color:#d32f2f; margin-top:0;" id="form-personel-adi">İzin Girişi</h3>
+            
+            <div class="form-grup">
+                <label>Başlangıç Tarihi</label>
+                <input type="date" id="form-bas-tarih" value="2026-06-26" onchange="hesapla()">
+            </div>
+            <div class="form-grup">
+                <label>Bitiş Tarihi (Dahil)</label>
+                <input type="date" id="form-bit-tarih" value="2026-07-08" onchange="hesapla()">
+            </div>
+            <div class="form-grup">
+                <label>İzinde Bulunacağı Adres</label>
+                <input type="text" id="form-adres" value="Konya">
+            </div>
+
+            <!-- Akıllı Hesap Paneli -->
+            <div class="ozet-kutusu">
+                <div class="ozet-satir"><span>Toplam Süre:</span><strong id="ozet-toplam-gun">13 Gün</strong></div>
+                <div class="ozet-satir" style="color:#2e7d32;"><span>Düşülen Pazar/Tatil:</span><strong id="ozet-dusulen">-2 Gün</strong></div>
+                <div class="ozet-satir" style="font-weight:bold; color:#c62828; margin-top:5px; border-top:1px dashed #ffcdd2; padding-top:5px;">
+                    <span>Hakedişten Düşecek:</span><strong id="ozet-net-gun">11 Gün</strong>
+                </div>
+            </div>
+
+            <div class="btn-grup">
+                <button class="btn btn-kirmizi" onclick="onaylaVeYazdir()">Onayla ve A5 Dilekçe Al 🖨️</button>
+                <button class="btn btn-beyaz" onclick="formuKapat()">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESMİ A5 BASKI ALANI (EKRANDA GİZLİ, YAZICIDA ÇIKAR) -->
+    <div id="baski-alani">
+        <div class="baski-baslik">İTFAİYE DAİRESİ BAŞKANLIĞINA</div>
+        <div class="baski-metin">
+            İtfaiye Dairesi Başkanlığına bağlı SEYDİŞEHİR İtfaiye biriminde görev yapmaktayım, 
+            <span class="baski-kalin" id="baski-tarih">26.06.2026</span> tarihinden itibaren 
+            <span class="baski-kalin" id="baski-sure-yazi">13 ( On üç )</span> gün yıllık izine ayrılmak istiyorum.<br>
+            Bilgilerinize arz ederim.
+        </div>
+        <div class="baski-imza-kapsam">
+            <div class="baski-sol">
+                <span class="baski-kalin" id="baski-personel">Abdulkadir YÜKSEL</span><br>
+                <span id="baski-unvan">İtfaiye Şoförü</span>
+            </div>
+            <div class="baski-sag">
+                <span class="baski-kalin">UYGUNDUR</span><br>
+                Fatih KARA<br>
+                Seydişehir İlçe Amiri
+            </div>
+        </div>
+        <div class="baski-adres">
+            <strong>İzinde Bulunacağım Adres:</strong> <span id="baski-adres-metin">Konya</span>
+        </div>
+    </div>
+
+    <!-- HESAPLAMA VE ÇIKTI MOTORU -->
+    <script>
+        let secilenPersonel = "";
+        let secilenUnvan = "";
+
+        function izinFormuAc(isim, unvan) {
+            secilenPersonel = isim;
+            secilenUnvan = unvan;
+            document.getElementById('form-personel-adi').innerText = "✍ " + isim + " İçin İzin Girişi";
+            document.getElementById('izinModal').style.display = 'flex';
+            hesapla();
+        }
+
+        function formuKapat() {
+            document.getElementById('izinModal').style.display = 'none';
+        }
+
+        function hesapla() {
+            let bas = new Date(document.getElementById('form-bas-tarih').value);
+            let bit = new Date(document.getElementById('form-bit-tarih').value);
+            
+            if (bit >= bas) {
+                let zamanFarki = Math.abs(bit.getTime() - bas.getTime());
+                let toplamGun = Math.ceil(zamanFarki / (1000 * 60 * 60 * 24)) + 1;
+                
+                let pazarSayisi = 0;
+                let anlikTarih = new Date(bas);
+                while (anlikTarih <= bit) {
+                    if (anlikTarih.getDay() === 0) { pazarSayisi++; }
+                    anlikTarih.setDate(anlikTarih.getDate() + 1);
+                }
+
+                let netGun = toplamGun - pazarSayisi;
+
+                document.getElementById('ozet-toplam-gun').innerText = toplamGun + " Gün";
+                document.getElementById('ozet-dusulen').innerText = "-" + pazarSayisi + " Gün (Pazar)";
+                document.getElementById('ozet-net-gun').innerText = netGun + " Gün";
+            }
+        }
+
+        function onaylaVeYazdir() {
+            let basTarih = document.getElementById('form-bas-tarih').value;
+            let parcalar = basTarih.split('-');
+            let duzgunTarih = parcalar[2] + "." + parcalar[1] + "." + parcalar[0];
+            
+            let toplamGunBasılacak = document.getElementById('ozet-toplam-gun').innerText.split(' ')[0];
+            let adres = document.getElementById('form-adres').value;
+
+            document.getElementById('baski-tarih').innerText = duzgunTarih;
+            document.getElementById('baski-sure-yazi').innerText = toplamGunBasılacak + " ( " + sayiyiYaziyaCevir(toplamGunBasılacak) + " )";
+            document.getElementById('baski-personel').innerText = secilenPersonel;
+            document.getElementById('baski-unvan').innerText = secilenUnvan;
+            document.getElementById('baski-adres-metin').innerText = adres;
+
+            window.print();
+            formuKapat();
+        }
+
+        function sayiyiYaziyaCevir(sayi) {
+            let birler = ["", "Bir", "İki", "Üç", "Dört", "Beş", "Altı", "Yedi", "Sekiz", "Dokuz"];
+            let onlar = ["", "On", "Yirmi", "Otuz", "Kırk", "Elli", "Altmış", "Yetmiş", "Seksen", "Doksan"];
+            sayi = parseInt(sayi);
+            if (sayi === 0) return "Sıfır";
+            let sonuc = "";
+            if (sayi >= 10) { sonuc += onlar[Math.floor(sayi / 10)] + " "; sayi %= 10; }
+            sonuc += birler[sayi];
+            return sonuc.trim();
+        }
+    </script>
+</body>
+</html>
