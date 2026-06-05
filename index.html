@@ -103,13 +103,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .legend-dot{width:14px;height:14px;border-radius:3px;}
 ::-webkit-scrollbar{width:6px;height:6px;}::-webkit-scrollbar-track{background:#f1f1f1;}::-webkit-scrollbar-thumb{background:#90A4AE;border-radius:3px;}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  emailjs.init("u7y-77z6w7W_placeholder"); 
+</script>
 </head>
 <body>
 
 <div id="loading-overlay">
   <div class="box">
     <div class="spinner">🔄</div>
-    <div style="font-family:'IBM Plex Sans',sans-serif;font-weight:700;color:#0D47A1;margin-top:6px;">İşleniyor...</div>
+    <div id="loading-text" style="font-family:'IBM Plex Sans',sans-serif;font-weight:700;color:#0D47A1;margin-top:6px;">İşleniyor...</div>
   </div>
 </div>
 
@@ -121,6 +125,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
   </div>
   <div id="header-right">
     <span id="conn-badge">⏳ Bağlanıyor...</span>
+    <button class="hdr-btn" style="background:var(--red-d); border-color:var(--white);" onclick="guvenliKapat()">❌ Programı Kapat</button>
     <button class="hdr-btn" style="background:rgba(255,255,255,.15)" onclick="veriAktar()">⬇ Yedeği İndir</button>
     <label class="hdr-btn" style="background:rgba(255,255,255,.15);cursor:pointer">
       ⬆ Yedeği Yükle
@@ -208,7 +213,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 
 </div>
 
-<!-- MODALS -->
 <div class="modal-overlay hidden" id="onay-modal">
   <div class="modal"><div class="modal-header red-hdr"><span>İZİN ONAY DETAYI</span><button class="modal-close" onclick="closeModal('onay-modal')">✕</button></div><div class="modal-body" id="onay-body"></div></div>
 </div>
@@ -356,7 +360,6 @@ function calCiz() {
   document.getElementById('cal-title').textContent=`${AY_ADLARI[calAy]} ${calYil}`;
   const grid=document.getElementById('cal-grid'); grid.innerHTML='';
   GUN_ADLARI.forEach(g=>{const d=document.createElement('div');d.className='cal-day-name';d.textContent=g;grid.appendChild(d);});
-  // Pazartesi = 0 olacak şekilde offset: Pzt(1)→0, Sal(2)→1, ... Paz(0)→6
   const ilk=new Date(calYil,calAy-1,1).getDay();
   const bosluk=(ilk+6)%7;
   for(let i=0;i<bosluk;i++){const e=document.createElement('div');e.className='cal-cell empty';grid.appendChild(e);}
@@ -433,7 +436,6 @@ async function personelSil(){
   if(!confirm(`${p?.isim} personelini ve tüm geçmişini silmek istediğinize emin misiniz?`)) return;
   showLoading();
   try{
-    // CASCADE ile otomatik silinir
     await dbDelete('personel',seciliPersonelId);
     await logYaz(`PERSONEL SİLİNDİ: ${p?.isim} (${p?.sicil_no})`);
     seciliPersonelId=null;
@@ -462,14 +464,14 @@ async function listele(){
     for(const p of sorted){
       const yil=SU_AN_YIL;
       const devGrup=p.statu==='Memur'?devir.filter(d=>d.personel_id===p.id&&d.yil>=yil-1):devir.filter(d=>d.personel_id===p.id);
-      const devirTop=devGrup.reduce((s,d)=>s+d.kalan_gun,0);
+      const devTop=devGrup.reduce((s,d)=>s+d.kalan_gun,0);
       const kul=izinler.filter(i=>i.personel_id===p.id).reduce((s,i)=>s+i.harcanan_gun,0);
       const rap=raporlar.filter(r=>r.personel_id===p.id).reduce((s,r)=>s+r.gun_sayisi,0);
       const stB=p.statu==='Memur'?`<span class="badge badge-blue">Memur</span>`:`<span class="badge badge-gray">İşçi(4A)</span>`;
       const vB=p.vardiya==='Gündüz'?`<span class="badge badge-gray">Gündüz</span>`:`<span class="badge badge-red">V${p.vardiya}</span>`;
-      const kStyle=devirTop<=5?'color:var(--red);font-weight:700':devirTop<=10?'color:var(--orange);font-weight:700':'';
+      const kStyle=devTop<=5?'color:var(--red);font-weight:700':devTop<=10?'color:var(--orange);font-weight:700':'';
       const tr=document.createElement('tr'); tr.dataset.pid=p.id;
-      tr.innerHTML=`<td>${p.id}</td><td><span style="font-family:var(--mono)">${p.sicil_no||'-'}</span></td><td class="isim-col">${p.isim}</td><td>${p.hakedis_tarihi||'-'}</td><td>${stB}</td><td>${vB}</td><td>${p.toplam_hak}</td><td style="color:var(--orange);font-weight:700">${devirTop}</td><td>${kul}</td><td style="color:var(--gray)">${rap}</td><td style="${kStyle}">${devirTop}</td>`;
+      tr.innerHTML=`<td>${p.id}</td><td><span style="font-family:var(--mono)">${p.sicil_no||'-'}</span></td><td class="isim-col">${p.isim}</td><td>${p.hakedis_tarihi||'-'}</td><td>${stB}</td><td>${vB}</td><td>${p.toplam_hak}</td><td style="color:var(--orange);font-weight:700">${devTop}</td><td>${kul}</td><td style="color:var(--gray)">${rap}</td><td style="${kStyle}">${devTop}</td>`;
       tr.onclick=()=>{seciliPersonelId=p.id;personelFormDoldur(p);document.querySelectorAll('#personel-tbody tr').forEach(r=>r.classList.toggle('selected',parseInt(r.dataset.pid)===p.id));};
       if(p.id===seciliPersonelId) tr.classList.add('selected');
       tbody.appendChild(tr);
@@ -783,10 +785,8 @@ async function veriYukle(event){
       if(!yedek.itf_personel){alert('Geçersiz yedek dosyası!');return;}
       if(!confirm(`Bu dosyada ${yedek.itf_personel.length} personel var.\n\nMevcut tüm veriler SİLİNECEK ve yüklenecek.\n\nEmin misiniz?`)){event.target.value='';return;}
       showLoading();
-      // Sil (ters bağımlılık sırasıyla)
       for(const t of ['izin_detay','mazeret','raporlar','hakedis_takip','izinler','devir_izinler','personel','bayramlar','sistem_logs'])
         await sb.from(t).delete().neq('id',0);
-      // Personel ekle, ID eşlemesi tut
       const pMap={};
       for(const p of (yedek.itf_personel||[])){
         const {id,...rest}=p; const {data}=await sb.from('personel').insert(rest).select().single(); pMap[id]=data.id;
@@ -812,6 +812,81 @@ async function veriYukle(event){
     }catch(err){alert('Hata: '+err.message);}finally{hideLoading();event.target.value='';}
   };
   okuyucu.readAsText(dosya,'utf-8');
+}
+
+// ═══════════════════════════════════════════
+//  E-POSTA YEDEKLEME VE GÜVENLİ KAPATMA
+// ═══════════════════════════════════════════
+async function veritabanıYedekGonder() {
+  try {
+    const [p, iz, dev, rap, maz, hak, det, bay] = await Promise.all([
+      dbGet('personel'), dbGet('izinler'), dbGet('devir_izinler'), 
+      dbGet('raporlar'), dbGet('mazeret'), dbGet('hakedis_takip'), 
+      dbGet('izin_detay'), dbGet('bayramlar')
+    ]);
+    
+    const yedekData = {
+      versiyon: '2.0',
+      tarih: new Date().toISOString(),
+      itf_personel: p, itf_izinler: iz, itf_devir: dev, 
+      itf_raporlar: rap, itf_mazeret: maz, itf_hakedis: hak, 
+      itf_iz_det: det, itf_bayramlar: bay
+    };
+
+    const zamanStr = new Date().toLocaleString('tr-TR');
+    
+    const emailParametreleri = {
+      to_email: "itfaiye.seydisehir@gmail.com",
+      from_name: "Seydişehir İtfaiyesi İzin Sistemi",
+      subject: `İtfaiye İzin Sistemi Yedek - ${zamanStr}`,
+      message: JSON.stringify(yedekData, null, 2)
+    };
+
+    await emailjs.send("service_w1v9gno", "template_n66w0b9", emailParametreleri);
+    await logYaz('Otomatik e-posta yedek dosyası Gmail adresine gönderildi.');
+    return true;
+  } catch (error) {
+    console.error("Yedek gönderme hatası:", error);
+    return false;
+  }
+}
+
+async function guvenliKapat() {
+  try {
+    const overlay = document.getElementById('loading-overlay');
+    const box = overlay.querySelector('.box');
+    const txt = document.getElementById('loading-text');
+    
+    box.style.border = "4px solid var(--red)";
+    txt.style.color = "var(--red)";
+    txt.innerHTML = `
+      <div style="font-family:'IBM Plex Sans',sans-serif; font-weight:700; font-size:18px;">VERİLER YEDEKLENİYOR...</div>
+      <div style="font-family:'IBM Plex Sans',sans-serif; margin-top:8px; font-size:14px; color:#212121; font-weight:normal;">VERİ DOSYASI MAİL ADRESİNE GÖNDERİLİYOR</div>
+      <div style="font-family:'IBM Plex Sans',sans-serif; font-style:italic; margin-top:6px; color:#555; font-weight:normal;">Lütfen bekleyiniz, tarayıcıyı kapatmayınız...</div>
+    `;
+    overlay.style.display = 'flex';
+
+    await veritabanıYedekGonder();
+    
+    txt.style.color = "var(--green)";
+    txt.innerHTML = `
+      <div style="font-family:'IBM Plex Sans',sans-serif; font-weight:700; font-size:18px;">YEDEKLEME BAŞARILI!</div>
+      <div style="font-family:'IBM Plex Sans',sans-serif; margin-top:8px; font-size:14px; color:#212121; font-weight:normal;">Sistem güvenli bir şekilde kapatılıyor.</div>
+    `;
+    
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      txt.style.color = "#0D47A1";
+      txt.innerHTML = "İşleniyor...";
+      box.style.border = "none";
+      window.close();
+      alert("Yedekleme tamamlandı ve mail gönderildi! Bu sekmeyi güvenle kapatabilirsiniz.");
+    }, 2000);
+
+  } catch (e) {
+    console.log(`Kapatma hatası: ${e}`);
+    hideLoading();
+  }
 }
 
 // ═══════════════════════════════════════════
