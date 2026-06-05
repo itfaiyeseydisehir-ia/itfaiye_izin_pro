@@ -1,334 +1,844 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seydişehir İtfaiyesi - İzin Takip Sistemi</title>
-    <style>
-        /* ==========================================
-           1. GENEL TASARIM VE KURUMSAL RENKLER
-           ========================================== */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #fcfcfc;
-            margin: 0;
-            padding: 0;
-            color: #333;
-        }
-        .ust-bar {
-            background-color: #d32f2f; /* Bayrak Kırmızısı */
-            color: white;
-            padding: 15px 20px;
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .ana-kapsayici {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 0 15px;
-        }
-
-        /* ==========================================
-           2. NET PERSONEL KARTLARI (DPI/BULANIKLIK SORUNSUZ)
-           ========================================== */
-        .arama-kutusu {
-            width: 100%;
-            max-width: 500px;
-            display: block;
-            margin: 0 auto 25px auto;
-            padding: 12px 20px;
-            font-size: 16px;
-            border: 2px solid #d32f2f;
-            border-radius: 25px;
-            box-sizing: border-box;
-            outline: none;
-        }
-        .kartlar-alani {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-        }
-        .personel-kart {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-            padding: 20px;
-            position: relative;
-            border-left: 6px solid #d32f2f;
-        }
-        .personel-isim {
-            font-size: 18px;
-            font-weight: bold;
-            color: #111;
-            margin-bottom: 5px;
-        }
-        .personel-detay {
-            font-size: 14px;
-            color: #666;
-            margin: 4px 0;
-        }
-        .vardiya-rozet {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: #d32f2f;
-            color: white;
-            font-weight: bold;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-        .izin-sayac {
-            margin-top: 15px;
-            font-size: 15px;
-            font-weight: bold;
-            color: #c62828;
-            background-color: #ffebee;
-            padding: 8px;
-            border-radius: 6px;
-            text-align: center;
-        }
-        .btn-grup {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .btn {
-            flex: 1;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            text-align: center;
-            border: none;
-        }
-        .btn-kirmizi { background-color: #d32f2f; color: white; }
-        .btn-beyaz { background-color: white; color: #d32f2f; border: 2px solid #d32f2f; }
-
-        /* ==========================================
-           3. DOKUNMATİK UYUMLU İZİN GİRİŞ MODALİ
-           ========================================== */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            justify-content: center; align-items: center;
-            z-index: 1000;
-        }
-        .modal-icerik {
-            background-color: white;
-            padding: 25px;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 450px;
-            box-sizing: border-box;
-            border-top: 6px solid #d32f2f;
-        }
-        .form-grup { margin-bottom: 15px; }
-        label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #444; }
-        select, input {
-            width: 100%; padding: 10px; font-size: 15px;
-            border: 2px solid #ccc; border-radius: 6px; box-sizing: border-box;
-        }
-        select:focus, input:focus { border-color: #d32f2f; outline: none; }
-        .ozet-kutusu {
-            background-color: #ffebee; padding: 12px; border-radius: 6px; margin-top: 15px;
-            font-size: 14px; border: 1px solid #ffcdd2;
-        }
-        .ozet-satir { display: flex; justify-content: space-between; margin-bottom: 4px; }
-
-        /* ==========================================
-           4. MİLİMETRİK RESMİ A5 BASKI FORMATI
-           ========================================== */
-        #baski-alani { display: none; }
-        @media print {
-            body * { display: none !important; }
-            #baski-alani, #baski-alani * { display: block !important; }
-            #baski-alani {
-                display: block !important;
-                position: absolute; left: 0; top: 0; width: 100%;
-                font-family: "Times New Roman", Times, serif !important;
-                font-size: 11pt !important; line-height: 1.6 !important; color: #000 !important;
-            }
-            @page { size: A5; margin: 15mm 10mm 15mm 10mm; }
-            .baski-baslik { text-align: center; font-weight: bold; font-size: 12pt; margin-bottom: 25mm; text-transform: uppercase; }
-            .baski-metin { text-align: justify; text-indent: 1cm; margin-bottom: 20mm; }
-            .baski-imza-kapsam { width: 100%; margin-bottom: 25mm; display: table; }
-            .baski-sol { display: table-cell; width: 50%; text-align: left; vertical-align: top; }
-            .baski-sag { display: table-cell; width: 50%; text-align: right; vertical-align: top; padding-right: 5mm; }
-            .baski-kalin { font-weight: bold; }
-            .baski-adres { border-top: 1px solid #ccc; padding-top: 3mm; font-size: 9.5pt; position: absolute; bottom: 0; width: 100%; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seydişehir İtfaiyesi - Personel İzin Takip</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+:root{--red:#B71C1C;--red-l:#C62828;--red-d:#7F0000;--navy:#0D47A1;--navy-l:#1565C0;--orange:#E65100;--green:#1B5E20;--teal:#00796B;--purple:#4A148C;--gray:#37474F;--bg:#E8ECEF;--white:#FFFFFF;--panel:#F5F5F5;--border:#CFD8DC;--text:#212121;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+#loading-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;}
+#loading-overlay .box{background:white;border-radius:14px;padding:28px 40px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+#loading-overlay .spinner{font-size:36px;animation:spin 1s linear infinite;display:inline-block;margin-bottom:10px;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+#header{background:linear-gradient(135deg,var(--red-d) 0%,var(--red) 60%,var(--red-l) 100%);color:white;padding:10px 20px;display:flex;align-items:center;gap:16px;box-shadow:0 4px 12px rgba(0,0,0,.4);flex-wrap:wrap;}
+#header .flame{font-size:32px;}
+#header h1{font-family:var(--display);font-size:26px;letter-spacing:2px;line-height:1;}
+#header small{font-size:11px;opacity:.75;letter-spacing:1px;}
+#header-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.hdr-btn{color:white;border:2px solid rgba(255,255,255,.4);border-radius:8px;padding:7px 13px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;}
+#conn-badge{font-size:11px;font-family:var(--mono);padding:4px 10px;border-radius:6px;background:rgba(255,255,255,.15);}
+#app{display:flex;flex-direction:column;gap:10px;padding:10px 16px 16px;}
+.panel{background:white;border-radius:12px;padding:14px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+.panel-title{font-family:var(--display);font-size:16px;letter-spacing:1.5px;color:white;background:var(--navy);padding:5px 12px;border-radius:6px;margin-bottom:12px;display:inline-block;}
+.panel-title.red{background:var(--red);}.panel-title.teal{background:var(--teal);}
+.form-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+.form-group{display:flex;flex-direction:column;gap:3px;}
+.form-group label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--red);background:#FFEBEE;padding:1px 6px;border-radius:3px;}
+.form-group input,.form-group select{border:2px solid var(--border);border-radius:8px;padding:7px 10px;font-family:var(--sans);font-size:14px;outline:none;transition:border-color .2s;background:white;min-width:0;}
+.form-group input:focus,.form-group select:focus{border-color:var(--navy);}
+.form-group input.w60{width:60px;}.form-group input.w100{width:100px;}.form-group input.w130{width:130px;}.form-group input.w180{width:180px;}.form-group input.w220{width:220px;}.form-group select.w150{width:150px;}.form-group select.w100{width:100px;}
+.btn{border:none;border-radius:8px;padding:8px 16px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;transition:filter .15s,transform .1s;letter-spacing:.3px;white-space:nowrap;}
+.btn:hover{filter:brightness(1.12);}.btn:active{transform:scale(.97);}
+.btn-green{background:var(--green);color:white;}.btn-orange{background:var(--orange);color:white;}.btn-red{background:var(--red);color:white;}.btn-navy{background:var(--navy);color:white;}.btn-teal{background:var(--teal);color:white;}.btn-gray{background:var(--gray);color:white;}
+.btn-lg{padding:11px 22px;font-size:14px;border-radius:10px;}
+#middle{display:grid;grid-template-columns:540px 1fr;gap:10px;}
+#cal-wrap{background:white;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+#cal-header{display:flex;align-items:center;justify-content:space-between;background:var(--gray);color:white;border-radius:8px;padding:8px 16px;margin-bottom:10px;}
+#cal-header span{font-family:var(--display);font-size:18px;letter-spacing:2px;}
+#cal-header button{background:transparent;border:none;color:white;font-size:20px;cursor:pointer;padding:2px 8px;border-radius:4px;transition:background .15s;}
+#cal-header button:hover{background:rgba(255,255,255,.2);}
+#cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-day-name{text-align:center;font-size:11px;font-weight:700;color:#555;padding:4px 0;letter-spacing:.5px;}
+.cal-cell{border-radius:8px;padding:6px 4px;text-align:center;cursor:pointer;transition:outline .1s,transform .1s;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.cal-cell:hover{transform:scale(1.05);outline:3px solid #333;z-index:1;}
+.cal-cell.selected{outline:4px solid #000 !important;z-index:2;}
+.cal-cell .day-num{font-size:16px;font-weight:700;line-height:1;}
+.cal-cell .vrd-lbl{font-size:11px;font-weight:600;margin-top:2px;opacity:.85;}
+.cal-cell.v1{background:#C62828;color:white;}.cal-cell.v2{background:#F9A825;color:#333;}.cal-cell.v3{background:#1565C0;color:white;}.cal-cell.vG{background:#78909C;color:white;}
+.cal-cell.empty{background:transparent;cursor:default;}.cal-cell.empty:hover{transform:none;outline:none;}
+#right-panel{display:flex;flex-direction:column;gap:10px;}
+#izin-box{background:white;border-radius:12px;padding:14px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:5px solid var(--red);}
+.izin-title{font-family:var(--display);font-size:15px;letter-spacing:1.5px;color:var(--red);margin-bottom:10px;}
+.date-selector{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.date-btn{border:3px solid var(--orange);background:white;color:var(--red-d);font-family:var(--sans);font-weight:700;font-size:13px;border-radius:8px;padding:8px 14px;cursor:pointer;transition:all .15s;}
+.date-btn:hover{background:#FFF3E0;}
+.date-display{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--navy);min-width:120px;}
+#btn-hesapla{border:2px solid white;background:var(--navy);color:white;font-family:var(--sans);font-weight:700;font-size:14px;border-radius:10px;padding:10px 22px;cursor:pointer;transition:filter .15s;}
+#btn-hesapla:hover{filter:brightness(1.15);}
+#action-btns{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
+.action-btn{padding:10px 6px;font-size:12px;font-weight:700;color:white;border:none;border-radius:8px;cursor:pointer;transition:filter .15s,transform .1s;text-align:center;line-height:1.2;border:2px solid rgba(255,255,255,.35);}
+.action-btn:hover{filter:brightness(1.12);transform:translateY(-1px);}.action-btn:active{transform:scale(.97);}
+#bayram-box{background:white;border-radius:12px;padding:14px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+#bay-list{max-height:120px;overflow-y:auto;margin-top:8px;}
+#bay-list table{width:100%;border-collapse:collapse;font-size:13px;}
+#bay-list th{background:#ECEFF1;padding:5px 8px;text-align:left;font-size:11px;letter-spacing:.5px;}
+#bay-list td{padding:5px 8px;border-bottom:1px solid #ECEFF1;}
+#log-box{background:#212121;border-radius:10px;padding:10px;height:120px;overflow-y:auto;margin-top:8px;}
+#log-box p{font-family:var(--mono);font-size:11px;color:#4CAF50;line-height:1.6;}
+#tablo-wrap{background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow-x:auto;-webkit-overflow-scrolling:touch;}
+#tablo-wrap table{width:max-content;min-width:100%;border-collapse:collapse;font-size:13px;}
+#tablo-wrap thead th{background:var(--red-d);color:white;padding:10px 8px;font-size:12px;letter-spacing:.5px;font-weight:700;white-space:nowrap;}
+#tablo-wrap tbody tr{transition:background .1s;cursor:pointer;}
+#tablo-wrap tbody tr:hover{background:#E3F2FD;}
+#tablo-wrap tbody tr.selected{background:#BBDEFB;}
+#tablo-wrap tbody td{padding:9px 8px;border-bottom:1px solid #ECEFF1;text-align:center;white-space:nowrap;}
+#tablo-wrap tbody td.isim-col{text-align:left;font-weight:600;}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.5px;}
+.badge-red{background:#FFEBEE;color:var(--red);}.badge-blue{background:#E3F2FD;color:var(--navy);}.badge-gray{background:#ECEFF1;color:#455A64;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(3px);}
+.modal-overlay.hidden{display:none;}
+.modal{background:white;border-radius:14px;padding:0;width:680px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);animation:popIn .2s ease;}
+@keyframes popIn{from{transform:scale(.9);opacity:0;}to{transform:scale(1);opacity:1;}}
+.modal-header{background:var(--navy);color:white;padding:16px 22px;font-family:var(--display);font-size:20px;letter-spacing:2px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center;}
+.modal-header.red-hdr{background:var(--red-d);}.modal-header.teal-hdr{background:var(--teal);}.modal-header.gray-hdr{background:var(--gray);}.modal-header.purple-hdr{background:var(--purple);}.modal-header.orange-hdr{background:var(--orange);}
+.modal-close{background:transparent;border:none;color:white;font-size:22px;cursor:pointer;line-height:1;}
+.modal-body{padding:22px;}
+.mini-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px;}
+.mini-table thead th{background:#ECEFF1;padding:7px 10px;text-align:left;font-size:11px;letter-spacing:.5px;}
+.mini-table tbody tr:hover{background:#F5F5F5;}
+.mini-table tbody td{padding:7px 10px;border-bottom:1px solid #ECEFF1;}
+.mini-table tbody tr.sel-row{background:#E3F2FD;}
+.onay-row{display:flex;gap:8px;margin-bottom:6px;font-size:14px;}
+.onay-lbl{width:130px;color:#555;}.onay-val{font-weight:700;}.onay-isbasi{color:var(--red);}
+.uyari-box{background:#FFEBEE;border-radius:8px;padding:10px 14px;margin:10px 0;}
+.uyari-box .uyari-title{color:var(--red);font-weight:700;margin-bottom:4px;}
+.fifo-box{background:#FFFDE7;border-radius:8px;padding:10px 14px;margin:10px 0;}
+.fifo-box .fifo-title{color:var(--orange);font-weight:700;margin-bottom:4px;font-size:12px;text-transform:uppercase;}
+.harcanan-big{text-align:center;font-size:28px;font-family:var(--display);color:var(--navy);margin:14px 0 0;letter-spacing:2px;}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;}
+.legend-dot{width:14px;height:14px;border-radius:3px;}
+::-webkit-scrollbar{width:6px;height:6px;}::-webkit-scrollbar-track{background:#f1f1f1;}::-webkit-scrollbar-thumb{background:#90A4AE;border-radius:3px;}
+</style>
 </head>
 <body>
 
-    <!-- ÜST PANEL -->
-    <div class="ust-bar">SEYDİŞEHİR İTFAİYE BİRİMİ - İZİN YÖNETİM PANELİ</div>
-    
-    <div class="ana-kapsayici">
-        <input type="text" class="arama-kutusu" placeholder="Personel ismi veya sicil no ara...">
-        
-        <div class="kartlar-alani">
-            <!-- 1. Personel Kartı -->
-            <div class="personel-kart">
-                <div class="vardiya-rozet">Grup 3</div>
-                <div class="personel-isim">Abdulkadir YÜKSEL</div>
-                <div class="personel-detay"><strong>Sicil No:</strong> 1234</div>
-                <div class="personel-detay"><strong>Unvan:</strong> İtfaiye Şoförü</div>
-                <div class="personel-detay"><strong>Statü:</strong> Şirket İşçisi (4A)</div>
-                <div class="izin-sayac">Kalan Yıllık İzin: 24 Gün</div>
-                <div class="btn-grup">
-                    <button class="btn btn-kirmizi" onclick="izinFormuAc('Abdulkadir YÜKSEL', 'İtfaiye Şoförü')">İzin Yaz</button>
-                </div>
-            </div>
+<div id="loading-overlay">
+  <div class="box">
+    <div class="spinner">🔄</div>
+    <div style="font-family:'IBM Plex Sans',sans-serif;font-weight:700;color:#0D47A1;margin-top:6px;">İşleniyor...</div>
+  </div>
+</div>
 
-            <!-- 2. Personel Kartı -->
-            <div class="personel-kart" style="border-left-color: #b71c1c;">
-                <div class="vardiya-rozet">Amirlik</div>
-                <div class="personel-isim">Fatih KARA</div>
-                <div class="personel-detay"><strong>Sicil No:</strong> 5678</div>
-                <div class="personel-detay"><strong>Unvan:</strong> Seydişehir İlçe Amiri</div>
-                <div class="personel-detay"><strong>Statü:</strong> Memur</div>
-                <div class="izin-sayac">Kalan Yıllık İzin: 30 Gün</div>
-                <div class="btn-grup">
-                    <button class="btn btn-kirmizi" onclick="izinFormuAc('Fatih KARA', 'Seydişehir İlçe Amiri')">İzin Yaz</button>
-                </div>
-            </div>
-        </div>
+<div id="header">
+  <span class="flame">🚒</span>
+  <div>
+    <h1>SEYDİŞEHİR İTFAİYESİ</h1>
+    <small>PERSONEL İZİN TAKİP SİSTEMİ</small>
+  </div>
+  <div id="header-right">
+    <span id="conn-badge">⏳ Bağlanıyor...</span>
+    <button class="hdr-btn" style="background:rgba(255,255,255,.15)" onclick="veriAktar()">⬇ Yedeği İndir</button>
+    <label class="hdr-btn" style="background:rgba(255,255,255,.15);cursor:pointer">
+      ⬆ Yedeği Yükle
+      <input type="file" accept=".json" onchange="veriYukle(event)" style="display:none">
+    </label>
+  </div>
+</div>
+
+<div id="app">
+
+  <div class="panel">
+    <div class="panel-title">Personel Kayıt</div>
+    <div class="form-row">
+      <div class="form-group"><label>Sicil No</label><input type="text" id="ent-sicil" class="w100" placeholder="12345"></div>
+      <div class="form-group"><label>Ad Soyad</label><input type="text" id="ent-isim" class="w220" placeholder="Ahmet Yılmaz"></div>
+      <div class="form-group"><label>Hakediş Tarihi</label><input type="text" id="ent-hak-tar" class="w130" placeholder="GG/AA/YYYY"></div>
+      <div class="form-group"><label>Hak (Gün)</label><input type="number" id="ent-hak" class="w60" value="30"></div>
+      <div class="form-group"><label>Statü</label><select id="cmb-statu" class="w150"><option>Memur</option><option>Şirket İşçisi(4A)</option></select></div>
+      <div class="form-group"><label>Vardiya</label><select id="cmb-vardiya" class="w100"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="Gündüz">Gündüz</option></select></div>
+      <button class="btn btn-green btn-lg" onclick="personelEkle()">KAYDET</button>
+      <button class="btn btn-orange btn-lg" onclick="personelGuncelle()">GÜNCELLE</button>
+    </div>
+  </div>
+
+  <div id="middle">
+    <div id="cal-wrap">
+      <div id="cal-header">
+        <button onclick="ayGeri()">&#8249;</button>
+        <span id="cal-title">Ocak 2026</span>
+        <button onclick="ayIleri()">&#8250;</button>
+      </div>
+      <div id="cal-grid"></div>
+      <div class="legend" style="margin-top:10px;">
+        <div class="legend-item"><div class="legend-dot" style="background:#C62828"></div>Vardiya 1</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#F9A825"></div>Vardiya 2</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1565C0"></div>Vardiya 3</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#78909C"></div>Gündüz</div>
+      </div>
     </div>
 
-    <!-- DİNAMİK İZİN MODALİ -->
-    <div id="izinModal" class="modal">
-        <div class="modal-icerik">
-            <h3 style="color:#d32f2f; margin-top:0;" id="form-personel-adi">İzin Girişi</h3>
-            
-            <div class="form-grup">
-                <label>Başlangıç Tarihi</label>
-                <input type="date" id="form-bas-tarih" value="2026-06-26" onchange="hesapla()">
-            </div>
-            <div class="form-grup">
-                <label>Bitiş Tarihi (Dahil)</label>
-                <input type="date" id="form-bit-tarih" value="2026-07-08" onchange="hesapla()">
-            </div>
-            <div class="form-grup">
-                <label>İzinde Bulunacağı Adres</label>
-                <input type="text" id="form-adres" value="Konya">
-            </div>
-
-            <!-- Akıllı Hesap Paneli -->
-            <div class="ozet-kutusu">
-                <div class="ozet-satir"><span>Toplam Süre:</span><strong id="ozet-toplam-gun">13 Gün</strong></div>
-                <div class="ozet-satir" style="color:#2e7d32;"><span>Düşülen Pazar/Tatil:</span><strong id="ozet-dusulen">-2 Gün</strong></div>
-                <div class="ozet-satir" style="font-weight:bold; color:#c62828; margin-top:5px; border-top:1px dashed #ffcdd2; padding-top:5px;">
-                    <span>Hakedişten Düşecek:</span><strong id="ozet-net-gun">11 Gün</strong>
-                </div>
-            </div>
-
-            <div class="btn-grup">
-                <button class="btn btn-kirmizi" onclick="onaylaVeYazdir()">Onayla ve A5 Dilekçe Al 🖨️</button>
-                <button class="btn btn-beyaz" onclick="formuKapat()">Kapat</button>
-            </div>
+    <div id="right-panel">
+      <div id="izin-box">
+        <div class="izin-title">🗓 İZİN TALEBİ OLUŞTUR</div>
+        <div class="date-selector">
+          <button class="date-btn" onclick="tarihAta(1)">BAŞLANGIÇ</button>
+          <span class="date-display" id="lbl-bas">--.--.----</span>
+          <button class="date-btn" onclick="tarihAta(2)">BİTİŞ</button>
+          <span class="date-display" id="lbl-bit">--.--.----</span>
+          <button id="btn-hesapla" onclick="hesaplaVeOnayla()">HESAPLA VE KAYDET</button>
         </div>
+      </div>
+
+      <div id="action-btns">
+        <button class="action-btn" style="background:#4A148C" onclick="arsivPenceresi()">📁 PERSONEL ARŞİVİ</button>
+        <button class="action-btn" style="background:#C66900" onclick="devirPenceresi()">↩ DEVİR YÖNETİMİ</button>
+        <button class="action-btn" style="background:#00796B" onclick="mazeretPenceresi()">📋 MAZERET İZNİ</button>
+        <button class="action-btn" style="background:#263238" onclick="raporPenceresi()">🏥 RAPOR YÖNETİMİ</button>
+        <button class="action-btn" style="background:#1B5E20" onclick="excelAktar()">📊 EXCEL'E AKTAR</button>
+        <button class="action-btn" style="background:#B71C1C" onclick="personelSil()">🗑 PERSONELİ SİL</button>
+      </div>
+
+      <div id="bayram-box">
+        <div class="panel-title teal" style="margin-bottom:8px;">🌙 Dini Bayram Manuel Tanımlama</div>
+        <div class="form-row">
+          <div class="form-group"><label>Bayram Adı</label><input type="text" id="ent-bay-ad" class="w180" placeholder="Ramazan Bayramı"></div>
+          <div class="form-group"><label>Tarih (GG/AA/YYYY)</label><input type="text" id="ent-bay-tar" class="w130" placeholder="01/01/2027"></div>
+          <button class="btn btn-green" onclick="bayramEkle()">KAYDET</button>
+          <button class="btn btn-red" onclick="bayramSil()">SİL</button>
+        </div>
+        <div id="bay-list"><table><thead><tr><th>ID</th><th>Bayram Adı</th><th>Tarih</th></tr></thead><tbody id="bay-tbody"></tbody></table></div>
+        <div style="margin-top:8px;font-size:11px;font-weight:700;color:#555;letter-spacing:.5px;">SİSTEM HAREKETLERİ</div>
+        <div id="log-box"></div>
+      </div>
     </div>
+  </div>
 
-    <!-- RESMİ A5 BASKI ALANI (EKRANDA GİZLİ, YAZICIDA ÇIKAR) -->
-    <div id="baski-alani">
-        <div class="baski-baslik">İTFAİYE DAİRESİ BAŞKANLIĞINA</div>
-        <div class="baski-metin">
-            İtfaiye Dairesi Başkanlığına bağlı SEYDİŞEHİR İtfaiye biriminde görev yapmaktayım, 
-            <span class="baski-kalin" id="baski-tarih">26.06.2026</span> tarihinden itibaren 
-            <span class="baski-kalin" id="baski-sure-yazi">13 ( On üç )</span> gün yıllık izine ayrılmak istiyorum.<br>
-            Bilgilerinize arz ederim.
-        </div>
-        <div class="baski-imza-kapsam">
-            <div class="baski-sol">
-                <span class="baski-kalin" id="baski-personel">Abdulkadir YÜKSEL</span><br>
-                <span id="baski-unvan">İtfaiye Şoförü</span>
-            </div>
-            <div class="baski-sag">
-                <span class="baski-kalin">UYGUNDUR</span><br>
-                Fatih KARA<br>
-                Seydişehir İlçe Amiri
-            </div>
-        </div>
-        <div class="baski-adres">
-            <strong>İzinde Bulunacağım Adres:</strong> <span id="baski-adres-metin">Konya</span>
-        </div>
-    </div>
+  <div id="tablo-wrap">
+    <table>
+      <thead>
+        <tr><th>ID</th><th>SİCİL</th><th>AD SOYAD</th><th>HAKEDİŞ</th><th>STATÜ</th><th>VARDİYA</th><th>ANA HAK</th><th>DEVİR</th><th>KULLANILAN</th><th>RAPOR</th><th>KALAN</th></tr>
+      </thead>
+      <tbody id="personel-tbody"></tbody>
+    </table>
+  </div>
 
-    <!-- HESAPLAMA VE ÇIKTI MOTORU -->
-    <script>
-        let secilenPersonel = "";
-        let secilenUnvan = "";
+</div>
 
-        function izinFormuAc(isim, unvan) {
-            secilenPersonel = isim;
-            secilenUnvan = unvan;
-            document.getElementById('form-personel-adi').innerText = "✍ " + isim + " İçin İzin Girişi";
-            document.getElementById('izinModal').style.display = 'flex';
-            hesapla();
-        }
+<!-- MODALS -->
+<div class="modal-overlay hidden" id="onay-modal">
+  <div class="modal"><div class="modal-header red-hdr"><span>İZİN ONAY DETAYI</span><button class="modal-close" onclick="closeModal('onay-modal')">✕</button></div><div class="modal-body" id="onay-body"></div></div>
+</div>
 
-        function formuKapat() {
-            document.getElementById('izinModal').style.display = 'none';
-        }
+<div class="modal-overlay hidden" id="arsiv-modal">
+  <div class="modal" style="width:800px"><div class="modal-header purple-hdr"><span>📁 PERSONEL ARŞİVİ</span><button class="modal-close" onclick="closeModal('arsiv-modal')">✕</button></div>
+  <div class="modal-body"><div id="arsiv-personel-adi" style="font-weight:700;font-size:16px;margin-bottom:12px;color:var(--red)"></div>
+  <table class="mini-table"><thead><tr><th>ID</th><th>TÜR</th><th>BAŞLANGIÇ</th><th>BİTİŞ</th><th>İŞBAŞI</th><th>GÜN</th><th>AÇIKLAMA</th></tr></thead><tbody id="arsiv-tbody"></tbody></table>
+  <div style="margin-top:12px;"><button class="btn btn-red" onclick="arsivSil()">YILLIK İZNİ SİL VE İADE ET</button></div></div></div>
+</div>
 
-        function hesapla() {
-            let bas = new Date(document.getElementById('form-bas-tarih').value);
-            let bit = new Date(document.getElementById('form-bit-tarih').value);
-            
-            if (bit >= bas) {
-                let zamanFarki = Math.abs(bit.getTime() - bas.getTime());
-                let toplamGun = Math.ceil(zamanFarki / (1000 * 60 * 60 * 24)) + 1;
-                
-                let pazarSayisi = 0;
-                let anlikTarih = new Date(bas);
-                while (anlikTarih <= bit) {
-                    if (anlikTarih.getDay() === 0) { pazarSayisi++; }
-                    anlikTarih.setDate(anlikTarih.getDate() + 1);
-                }
+<div class="modal-overlay hidden" id="devir-modal">
+  <div class="modal" style="width:500px"><div class="modal-header orange-hdr"><span>↩ DEVİR YÖNETİMİ</span><button class="modal-close" onclick="closeModal('devir-modal')">✕</button></div>
+  <div class="modal-body"><div id="devir-personel-adi" style="font-weight:700;font-size:16px;margin-bottom:12px;color:var(--orange)"></div>
+  <div class="form-row" style="margin-bottom:12px;">
+    <div class="form-group"><label>Yıl</label><input type="number" id="devir-yil" class="w100" value="2025"></div>
+    <div class="form-group"><label>Gün</label><input type="number" id="devir-gun" class="w100" placeholder="0"></div>
+    <button class="btn btn-green" onclick="devirEkle()">GÜN EKLE</button>
+    <button class="btn btn-red" onclick="devirSil()">SEÇİLİ DEVİRİ SİL</button>
+  </div>
+  <table class="mini-table"><thead><tr><th>ID</th><th>YIL</th><th>GÜN</th></tr></thead><tbody id="devir-tbody"></tbody></table>
+  </div></div>
+</div>
 
-                let netGun = toplamGun - pazarSayisi;
+<div class="modal-overlay hidden" id="mazeret-modal">
+  <div class="modal"><div class="modal-header teal-hdr"><span>📋 MAZERET İZNİ</span><button class="modal-close" onclick="closeModal('mazeret-modal')">✕</button></div>
+  <div class="modal-body"><div id="mazeret-personel-adi" style="font-weight:700;font-size:16px;margin-bottom:12px;color:var(--teal)"></div>
+  <p style="color:var(--teal);font-size:12px;margin-bottom:10px;font-weight:700;">⚠ Mazeret izni bakiyeden düşülmez.</p>
+  <div class="form-row" style="margin-bottom:12px;">
+    <div class="form-group"><label>Başlangıç</label><input type="text" id="maz-bas" class="w130" placeholder="GG/AA/YYYY"></div>
+    <div class="form-group"><label>Bitiş</label><input type="text" id="maz-bit" class="w130" placeholder="GG/AA/YYYY"></div>
+    <div class="form-group"><label>Açıklama</label><input type="text" id="maz-ac" class="w180" placeholder="Hastalık, vs."></div>
+    <button class="btn btn-teal" onclick="mazeretEkle()">KAYDET</button>
+    <button class="btn btn-red" onclick="mazeretSil()">SİL</button>
+  </div>
+  <table class="mini-table"><thead><tr><th>ID</th><th>BAŞLANGIÇ</th><th>BİTİŞ</th><th>GÜN</th><th>AÇIKLAMA</th></tr></thead><tbody id="maz-tbody"></tbody></table>
+  </div></div>
+</div>
 
-                document.getElementById('ozet-toplam-gun').innerText = toplamGun + " Gün";
-                document.getElementById('ozet-dusulen').innerText = "-" + pazarSayisi + " Gün (Pazar)";
-                document.getElementById('ozet-net-gun').innerText = netGun + " Gün";
-            }
-        }
+<div class="modal-overlay hidden" id="rapor-modal">
+  <div class="modal"><div class="modal-header gray-hdr"><span>🏥 RAPOR YÖNETİMİ</span><button class="modal-close" onclick="closeModal('rapor-modal')">✕</button></div>
+  <div class="modal-body"><div id="rapor-personel-adi" style="font-weight:700;font-size:16px;margin-bottom:12px;color:var(--gray)"></div>
+  <div class="form-row" style="margin-bottom:12px;">
+    <div class="form-group"><label>Başlangıç</label><input type="text" id="rap-bas" class="w130" placeholder="GG/AA/YYYY"></div>
+    <div class="form-group"><label>Bitiş</label><input type="text" id="rap-bit" class="w130" placeholder="GG/AA/YYYY"></div>
+    <div class="form-group"><label>Açıklama</label><input type="text" id="rap-ac" class="w180" placeholder="Hastane raporu, vs."></div>
+    <button class="btn btn-gray" onclick="raporEkle()">KAYDET</button>
+    <button class="btn btn-red" onclick="raporSil()">SİL</button>
+  </div>
+  <table class="mini-table"><thead><tr><th>ID</th><th>BAŞLANGIÇ</th><th>BİTİŞ</th><th>İŞBAŞI</th><th>GÜN</th><th>AÇIKLAMA</th></tr></thead><tbody id="rap-tbody"></tbody></table>
+  </div></div>
+</div>
 
-        function onaylaVeYazdir() {
-            let basTarih = document.getElementById('form-bas-tarih').value;
-            let parcalar = basTarih.split('-');
-            let duzgunTarih = parcalar[2] + "." + parcalar[1] + "." + parcalar[0];
-            
-            let toplamGunBasılacak = document.getElementById('ozet-toplam-gun').innerText.split(' ')[0];
-            let adres = document.getElementById('form-adres').value;
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ═══════════════════════════════════════════
+//  SUPABASE CLIENT
+// ═══════════════════════════════════════════
+const { createClient } = supabase;
+const sb = createClient(
+  'https://gvodmscjdgxfwcfmzwmk.supabase.co',
+  'sb_publishable_kyLOhT5VjdvsF5GnVzPORw_8_m_cBXw'
+);
 
-            document.getElementById('baski-tarih').innerText = duzgunTarih;
-            document.getElementById('baski-sure-yazi').innerText = toplamGunBasılacak + " ( " + sayiyiYaziyaCevir(toplamGunBasılacak) + " )";
-            document.getElementById('baski-personel').innerText = secilenPersonel;
-            document.getElementById('baski-unvan').innerText = secilenUnvan;
-            document.getElementById('baski-adres-metin').innerText = adres;
+// ═══════════════════════════════════════════
+//  DB YARDIMCI FONKSİYONLAR
+// ═══════════════════════════════════════════
+async function dbGet(table, filter = {}) {
+  let q = sb.from(table).select('*').order('id');
+  for (const [k, v] of Object.entries(filter)) q = q.eq(k, v);
+  const { data, error } = await q;
+  if (error) { console.error(`dbGet(${table}):`, error); return []; }
+  return data || [];
+}
+async function dbInsert(table, row) {
+  const { data, error } = await sb.from(table).insert(row).select().single();
+  if (error) throw new Error(`Kayıt hatası (${table}): ${error.message}`);
+  return data;
+}
+async function dbUpdate(table, id, changes) {
+  const { data, error } = await sb.from(table).update(changes).eq('id', id).select().single();
+  if (error) throw new Error(`Güncelleme hatası: ${error.message}`);
+  return data;
+}
+async function dbDelete(table, id) {
+  const { error } = await sb.from(table).delete().eq('id', id);
+  if (error) throw new Error(`Silme hatası: ${error.message}`);
+}
+async function dbDeleteWhere(table, col, val) {
+  const { error } = await sb.from(table).delete().eq(col, val);
+  if (error) throw new Error(`Silme hatası: ${error.message}`);
+}
 
-            window.print();
-            formuKapat();
-        }
+// ═══════════════════════════════════════════
+//  LOADING
+// ═══════════════════════════════════════════
+let _loadCount = 0;
+function showLoading() { _loadCount++; document.getElementById('loading-overlay').style.display = 'flex'; }
+function hideLoading() { _loadCount = Math.max(0, _loadCount-1); if(!_loadCount) document.getElementById('loading-overlay').style.display = 'none'; }
 
-        function sayiyiYaziyaCevir(sayi) {
-            let birler = ["", "Bir", "İki", "Üç", "Dört", "Beş", "Altı", "Yedi", "Sekiz", "Dokuz"];
-            let onlar = ["", "On", "Yirmi", "Otuz", "Kırk", "Elli", "Altmış", "Yetmiş", "Seksen", "Doksan"];
-            sayi = parseInt(sayi);
-            if (sayi === 0) return "Sıfır";
-            let sonuc = "";
-            if (sayi >= 10) { sonuc += onlar[Math.floor(sayi / 10)] + " "; sayi %= 10; }
-            sonuc += birler[sayi];
-            return sonuc.trim();
-        }
-    </script>
+// ═══════════════════════════════════════════
+//  SABİTLER
+// ═══════════════════════════════════════════
+const REF_DATE = new Date(2026, 2, 1);
+const REF_VARDIYA = 2;
+const SU_AN_YIL = new Date().getFullYear();
+const TATIL_ADLARI = {"01/01":"Yılbaşı","23/04":"Ulusal Egemenlik ve Çocuk Bayramı","01/05":"Emek ve Dayanışma Günü","19/05":"Atatürk'ü Anma, Gençlik ve Spor Bayramı","15/07":"Demokrasi ve Milli Birlik Günü","30/08":"Zafer Bayramı","29/10":"Cumhuriyet Bayramı"};
+const DINI_TATIL_DETAY = {"19/03/2026":"Ramazan Bayramı (Arefe)","20/03/2026":"Ramazan Bayramı (1. Gün)","21/03/2026":"Ramazan Bayramı (2. Gün)","22/03/2026":"Ramazan Bayramı (3. Gün)","26/05/2026":"Kurban Bayramı (Arefe)","27/05/2026":"Kurban Bayramı (1. Gün)","28/05/2026":"Kurban Bayramı (2. Gün)","29/05/2026":"Kurban Bayramı (3. Gün)","30/05/2026":"Kurban Bayramı (4. Gün)"};
+const AY_ADLARI = ["","Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+const GUN_ADLARI = ["Pt","Sa","Ça","Pe","Cu","Ct","Pz"];
+
+// ═══════════════════════════════════════════
+//  YARDIMCI FONKSİYONLAR
+// ═══════════════════════════════════════════
+function vardiyaBul(d) { const delta = Math.round((d - REF_DATE) / 86400000); return ((delta + (REF_VARDIYA - 1)) % 3) + 1; }
+function formatTarih(d) { if(!d) return '--.--.----'; const g=String(d.getDate()).padStart(2,'0'),a=String(d.getMonth()+1).padStart(2,'0'),y=d.getFullYear(); return `${g}/${a}/${y}`; }
+function parseTarih(s) { const [g,a,y]=s.split('/').map(Number); return new Date(y,a-1,g); }
+function bugun() { const d=new Date(); d.setHours(0,0,0,0); return d; }
+function isTatilSync(t, bayramlar) {
+  const dStr=formatTarih(t), kisa=`${String(t.getDate()).padStart(2,'0')}/${String(t.getMonth()+1).padStart(2,'0')}`;
+  if(kisa in TATIL_ADLARI) return TATIL_ADLARI[kisa];
+  if(dStr in DINI_TATIL_DETAY) return DINI_TATIL_DETAY[dStr];
+  const mb=bayramlar.find(b=>b.tarih===dStr); if(mb) return mb.ad;
+  return null;
+}
+async function logYaz(mesaj) {
+  const now=new Date(), zaman=`${String(now.getDate()).padStart(2,'0')}.${String(now.getMonth()+1).padStart(2,'0')}.${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  try { await sb.from('sistem_logs').insert({mesaj:`[${zaman}] ${mesaj}`}); } catch(e){}
+  renderLog();
+}
+async function renderLog() {
+  const box=document.getElementById('log-box');
+  const {data}=await sb.from('sistem_logs').select('mesaj').order('id',{ascending:false}).limit(50);
+  if(data) box.innerHTML=(data||[]).reverse().map(l=>`<p>${l.mesaj}</p>`).join('');
+  box.scrollTop=box.scrollHeight;
+}
+function openModal(id){document.getElementById(id).classList.remove('hidden');}
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
+
+// ═══════════════════════════════════════════
+//  TAKVİM
+// ═══════════════════════════════════════════
+let calYil=new Date().getFullYear(), calAy=new Date().getMonth()+1, seciliTarih=null, basTarih=null, bitTarih=null;
+function calCiz() {
+  document.getElementById('cal-title').textContent=`${AY_ADLARI[calAy]} ${calYil}`;
+  const grid=document.getElementById('cal-grid'); grid.innerHTML='';
+  GUN_ADLARI.forEach(g=>{const d=document.createElement('div');d.className='cal-day-name';d.textContent=g;grid.appendChild(d);});
+  // Pazartesi = 0 olacak şekilde offset: Pzt(1)→0, Sal(2)→1, ... Paz(0)→6
+  const ilk=new Date(calYil,calAy-1,1).getDay();
+  const bosluk=(ilk+6)%7;
+  for(let i=0;i<bosluk;i++){const e=document.createElement('div');e.className='cal-cell empty';grid.appendChild(e);}
+  const son=new Date(calYil,calAy,0).getDate();
+  for(let g=1;g<=son;g++){
+    const t=new Date(calYil,calAy-1,g), v=vardiyaBul(t), cls=['cal-cell',`v${v}`];
+    if(seciliTarih&&seciliTarih.toDateString()===t.toDateString()) cls.push('selected');
+    const cell=document.createElement('div'); cell.className=cls.join(' ');
+    cell.innerHTML=`<span class="day-num">${g}</span><span class="vrd-lbl">(${v})</span>`;
+    cell.onclick=()=>{seciliTarih=t;calCiz();}; grid.appendChild(cell);
+  }
+}
+function ayIleri(){if(calAy===12){calAy=1;calYil++;}else calAy++;calCiz();}
+function ayGeri(){if(calAy===1){calAy=12;calYil--;}else calAy--;calCiz();}
+function tarihAta(mod){
+  if(!seciliTarih){alert('Lütfen önce takvimden bir tarih seçin!');return;}
+  if(mod===1){basTarih=new Date(seciliTarih);document.getElementById('lbl-bas').textContent=formatTarih(basTarih);}
+  else{bitTarih=new Date(seciliTarih);document.getElementById('lbl-bit').textContent=formatTarih(bitTarih);}
+}
+
+// ═══════════════════════════════════════════
+//  OTOMATİK HAKEDİŞ
+// ═══════════════════════════════════════════
+async function otomatikHakedisIslet() {
+  const gun=bugun(), yil=gun.getFullYear();
+  const [personel,hakedis,devir]=await Promise.all([dbGet('personel'),dbGet('hakedis_takip'),dbGet('devir_izinler')]);
+  for(const p of personel){
+    if(!p.hakedis_tarihi) continue;
+    const [hg,ha]=p.hakedis_tarihi.split('/').map(Number); if(!hg||!ha) continue;
+    const hakedisYil=new Date(yil,ha-1,hg);
+    if(p.statu==='Memur'){
+      const eskiDevir=devir.filter(d=>d.personel_id===p.id&&d.yil<yil-1);
+      for(const d of eskiDevir) try{await dbDelete('devir_izinler',d.id);}catch(e){}
+    }
+    const varMi=hakedis.find(h=>h.personel_id===p.id&&h.yil===yil);
+    if(!varMi&&gun>=hakedisYil){
+      try{
+        await sb.from('devir_izinler').insert({personel_id:p.id,yil,kalan_gun:p.toplam_hak});
+        await sb.from('hakedis_takip').insert({personel_id:p.id,yil});
+        await logYaz(`Otomatik hakediş: ${p.isim} - ${yil} yılı ${p.toplam_hak} gün eklendi`);
+      }catch(e){}
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+//  PERSONEL CRUD
+// ═══════════════════════════════════════════
+let seciliPersonelId=null;
+async function personelEkle(){
+  const sicil=document.getElementById('ent-sicil').value.trim().toUpperCase();
+  const isim=document.getElementById('ent-isim').value.trim().toUpperCase();
+  if(!sicil||!isim){alert('Sicil No ve İsim zorunludur!');return;}
+  showLoading();
+  try{
+    await dbInsert('personel',{sicil_no:sicil,isim,statu:document.getElementById('cmb-statu').value,vardiya:document.getElementById('cmb-vardiya').value,toplam_hak:parseInt(document.getElementById('ent-hak').value)||0,hakedis_tarihi:document.getElementById('ent-hak-tar').value});
+    await logYaz(`Personel eklendi: ${isim} (${sicil})`);
+    document.getElementById('ent-sicil').value=''; document.getElementById('ent-isim').value='';
+    await listele();
+  }catch(e){alert(e.message);}finally{hideLoading();}
+}
+async function personelGuncelle(){
+  if(!seciliPersonelId){alert('Lütfen bir personel seçin!');return;}
+  showLoading();
+  try{
+    await dbUpdate('personel',seciliPersonelId,{sicil_no:document.getElementById('ent-sicil').value.trim().toUpperCase(),isim:document.getElementById('ent-isim').value.trim().toUpperCase(),statu:document.getElementById('cmb-statu').value,vardiya:document.getElementById('cmb-vardiya').value,toplam_hak:parseInt(document.getElementById('ent-hak').value)||0,hakedis_tarihi:document.getElementById('ent-hak-tar').value});
+    await logYaz(`Personel güncellendi: ID ${seciliPersonelId}`);
+    await listele();
+  }catch(e){alert(e.message);}finally{hideLoading();}
+}
+async function personelSil(){
+  if(!seciliPersonelId){alert('Lütfen bir personel seçin!');return;}
+  const {data:p}=await sb.from('personel').select('isim,sicil_no').eq('id',seciliPersonelId).single();
+  if(!confirm(`${p?.isim} personelini ve tüm geçmişini silmek istediğinize emin misiniz?`)) return;
+  showLoading();
+  try{
+    // CASCADE ile otomatik silinir
+    await dbDelete('personel',seciliPersonelId);
+    await logYaz(`PERSONEL SİLİNDİ: ${p?.isim} (${p?.sicil_no})`);
+    seciliPersonelId=null;
+    await listele();
+  }catch(e){alert(e.message);}finally{hideLoading();}
+}
+function personelFormDoldur(p){
+  document.getElementById('ent-sicil').value=p.sicil_no||'';
+  document.getElementById('ent-isim').value=p.isim||'';
+  document.getElementById('ent-hak-tar').value=p.hakedis_tarihi||'';
+  document.getElementById('cmb-statu').value=p.statu||'Memur';
+  document.getElementById('cmb-vardiya').value=p.vardiya||'1';
+  document.getElementById('ent-hak').value=p.toplam_hak||30;
+}
+
+// ═══════════════════════════════════════════
+//  LİSTELE
+// ═══════════════════════════════════════════
+async function listele(){
+  showLoading();
+  try{
+    await otomatikHakedisIslet();
+    const [personel,izinler,devir,raporlar]=await Promise.all([dbGet('personel'),dbGet('izinler'),dbGet('devir_izinler'),dbGet('raporlar')]);
+    const tbody=document.getElementById('personel-tbody'); tbody.innerHTML='';
+    const sorted=[...personel].sort((a,b)=>a.isim.localeCompare(b.isim));
+    for(const p of sorted){
+      const yil=SU_AN_YIL;
+      const devGrup=p.statu==='Memur'?devir.filter(d=>d.personel_id===p.id&&d.yil>=yil-1):devir.filter(d=>d.personel_id===p.id);
+      const devirTop=devGrup.reduce((s,d)=>s+d.kalan_gun,0);
+      const kul=izinler.filter(i=>i.personel_id===p.id).reduce((s,i)=>s+i.harcanan_gun,0);
+      const rap=raporlar.filter(r=>r.personel_id===p.id).reduce((s,r)=>s+r.gun_sayisi,0);
+      const stB=p.statu==='Memur'?`<span class="badge badge-blue">Memur</span>`:`<span class="badge badge-gray">İşçi(4A)</span>`;
+      const vB=p.vardiya==='Gündüz'?`<span class="badge badge-gray">Gündüz</span>`:`<span class="badge badge-red">V${p.vardiya}</span>`;
+      const kStyle=devirTop<=5?'color:var(--red);font-weight:700':devirTop<=10?'color:var(--orange);font-weight:700':'';
+      const tr=document.createElement('tr'); tr.dataset.pid=p.id;
+      tr.innerHTML=`<td>${p.id}</td><td><span style="font-family:var(--mono)">${p.sicil_no||'-'}</span></td><td class="isim-col">${p.isim}</td><td>${p.hakedis_tarihi||'-'}</td><td>${stB}</td><td>${vB}</td><td>${p.toplam_hak}</td><td style="color:var(--orange);font-weight:700">${devirTop}</td><td>${kul}</td><td style="color:var(--gray)">${rap}</td><td style="${kStyle}">${devirTop}</td>`;
+      tr.onclick=()=>{seciliPersonelId=p.id;personelFormDoldur(p);document.querySelectorAll('#personel-tbody tr').forEach(r=>r.classList.toggle('selected',parseInt(r.dataset.pid)===p.id));};
+      if(p.id===seciliPersonelId) tr.classList.add('selected');
+      tbody.appendChild(tr);
+    }
+  }finally{hideLoading();}
+}
+
+// ═══════════════════════════════════════════
+//  HESAPLA VE ONAYLA
+// ═══════════════════════════════════════════
+let _dusecekPlan=[];
+async function hesaplaVeOnayla(){
+  if(!seciliPersonelId){alert('Lütfen bir personel seçin!');return;}
+  if(!basTarih||!bitTarih){alert('Lütfen başlangıç ve bitiş tarihlerini seçin!');return;}
+  if(bitTarih<basTarih){alert('Bitiş tarihi başlangıçtan önce olamaz!');return;}
+  showLoading();
+  try{
+    const [personelListe,devirListe,bayramlar]=await Promise.all([dbGet('personel'),dbGet('devir_izinler'),dbGet('bayramlar')]);
+    const p=personelListe.find(x=>x.id===seciliPersonelId); if(!p) return;
+    const yil=SU_AN_YIL;
+    const devirGruplar=(p.statu==='Memur'?devirListe.filter(d=>d.personel_id===p.id&&d.yil>=yil-1):devirListe.filter(d=>d.personel_id===p.id)).sort((a,b)=>a.yil-b.yil);
+    const devirTop=devirGruplar.reduce((s,d)=>s+d.kalan_gun,0);
+    const diff=Math.round((bitTarih-basTarih)/86400000)+1;
+    const isbasi=new Date(bitTarih); isbasi.setDate(isbasi.getDate()+1);
+    let harcanan=0,pazarS=0,bayramS=0; const bayramList=[];
+    for(let i=0;i<diff;i++){
+      const t=new Date(basTarih); t.setDate(t.getDate()+i);
+      const tatilAd=isTatilSync(t,bayramlar);
+      if(p.statu==='Memur'){harcanan++;}
+      else{if(t.getDay()===0){pazarS++;}else if(tatilAd){bayramS++;bayramList.push(`${formatTarih(t)} - ${tatilAd}`);}else harcanan++;}
+    }
+    if(harcanan>devirTop){alert(`YETERSİZ BAKİYE!\nKalan: ${devirTop} gün\nTalep: ${harcanan} gün`);return;}
+    let tempH=harcanan; const yilDokum=[]; _dusecekPlan=[];
+    for(const d of devirGruplar){if(tempH<=0||d.kalan_gun<=0) continue; const m=Math.min(d.kalan_gun,tempH); yilDokum.push(`${d.yil} Yılından: ${m} Gün`); _dusecekPlan.push({devir_id:d.id,miktar:m}); tempH-=m;}
+    let html=`<div class="onay-row"><span class="onay-lbl">Personel:</span><span class="onay-val">${p.isim}</span></div>
+    <div class="onay-row"><span class="onay-lbl">Statü:</span><span class="onay-val">${p.statu}</span></div><hr style="margin:8px 0;border-color:#ECEFF1">
+    <div class="onay-row"><span class="onay-lbl">Başlangıç:</span><span class="onay-val">${formatTarih(basTarih)}</span></div>
+    <div class="onay-row"><span class="onay-lbl">Bitiş:</span><span class="onay-val">${formatTarih(bitTarih)}</span></div>
+    <div class="onay-row"><span class="onay-lbl">İŞBAŞI:</span><span class="onay-val onay-isbasi">${formatTarih(isbasi)}</span></div>
+    <div class="onay-row"><span class="onay-lbl">Takvim Günü:</span><span class="onay-val">${diff} Gün</span></div>`;
+    if(p.statu!=='Memur'&&(pazarS>0||bayramS>0)){
+      html+=`<div class="uyari-box"><div class="uyari-title">⚠ TATİL GÜNÜ UYARISI</div>`;
+      if(pazarS>0) html+=`<div>• ${pazarS} GÜN PAZAR (DÜŞÜLMEZ)</div>`;
+      if(bayramS>0){html+=`<div>• ${bayramS} GÜN TATİL (DÜŞÜLMEZ)</div>`;bayramList.forEach(b=>{html+=`<div style="font-size:12px;color:#555">  - ${b}</div>`;});}
+      html+=`</div>`;
+    }
+    html+=`<div class="fifo-box"><div class="fifo-title">Bakiye Kullanım Detayı</div>`;
+    yilDokum.forEach(d=>{html+=`<div style="font-weight:700">${d}</div>`;});
+    html+=`</div><div class="harcanan-big">HAKTAN DÜŞECEK: ${harcanan} GÜN</div>
+    <div style="margin-top:16px;text-align:center"><button class="btn btn-green btn-lg" onclick="izinOnayla(${p.id},${harcanan},'${formatTarih(basTarih)}','${formatTarih(bitTarih)}')">✓ ONAYLA VE BAKİYEDEN DÜŞ</button></div>`;
+    document.getElementById('onay-body').innerHTML=html;
+    openModal('onay-modal');
+  }catch(e){alert(e.message);}finally{hideLoading();}
+}
+async function izinOnayla(pid,harcanan,bas,bit){
+  showLoading();
+  try{
+    const yeni=await dbInsert('izinler',{personel_id:pid,baslangic:bas,bitis:bit,harcanan_gun:harcanan,yil:parseInt(bas.split('/')[2])});
+    for(const {devir_id,miktar} of _dusecekPlan){
+      const {data:d}=await sb.from('devir_izinler').select('kalan_gun').eq('id',devir_id).single();
+      await sb.from('devir_izinler').update({kalan_gun:d.kalan_gun-miktar}).eq('id',devir_id);
+      await dbInsert('izin_detay',{izin_id:yeni.id,devir_id,miktar});
+    }
+    const {data:pData}=await sb.from('personel').select('isim').eq('id',pid).single();
+    await logYaz(`İzin kaydedildi: ${pData?.isim} - ${bas}/${bit} (${harcanan} gün)`);
+    closeModal('onay-modal');
+    basTarih=null;bitTarih=null;
+    document.getElementById('lbl-bas').textContent='--.--.----';
+    document.getElementById('lbl-bit').textContent='--.--.----';
+    await listele();
+  }catch(e){alert(e.message);}finally{hideLoading();}
+}
+
+// ═══════════════════════════════════════════
+//  BAYRAM
+// ═══════════════════════════════════════════
+let seciliBayramId=null;
+async function bayramEkle(){
+  const ad=document.getElementById('ent-bay-ad').value.trim().toUpperCase();
+  const tar=document.getElementById('ent-bay-tar').value.trim();
+  if(!ad||!tar){alert('Bayram adı ve tarih giriniz!');return;}
+  if(!/^\d{2}\/\d{2}\/\d{4}$/.test(tar)){alert('Tarih formatı GG/AA/YYYY olmalıdır!');return;}
+  showLoading();
+  try{
+    await sb.from('bayramlar').upsert({ad,tarih:tar},{onConflict:'tarih'});
+    document.getElementById('ent-bay-ad').value='';
+    await bayramListele();
+  }catch(e){alert(e.message);}finally{hideLoading();}
+}
+async function bayramSil(){
+  if(!seciliBayramId){alert('Lütfen bir bayram seçin!');return;}
+  showLoading();
+  try{await dbDelete('bayramlar',seciliBayramId);seciliBayramId=null;await bayramListele();}catch(e){alert(e.message);}finally{hideLoading();}
+}
+async function bayramListele(){
+  const data=await dbGet('bayramlar');
+  const tbody=document.getElementById('bay-tbody'); tbody.innerHTML='';
+  [...data].reverse().forEach(b=>{
+    const tr=document.createElement('tr'); tr.style.cursor='pointer';
+    tr.innerHTML=`<td>${b.id}</td><td>${b.ad}</td><td style="font-family:var(--mono)">${b.tarih}</td>`;
+    tr.onclick=()=>{seciliBayramId=b.id;document.querySelectorAll('#bay-tbody tr').forEach(r=>r.style.background='');tr.style.background='#E3F2FD';};
+    tbody.appendChild(tr);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  ARŞİV
+// ═══════════════════════════════════════════
+let arsivSecilenId=null;
+async function arsivPenceresi(){
+  if(!seciliPersonelId){alert('Lütfen bir personel seçin!');return;}
+  const {data:p}=await sb.from('personel').select('isim').eq('id',seciliPersonelId).single();
+  document.getElementById('arsiv-personel-adi').textContent=`📋 ${p?.isim}`;
+  arsivSecilenId=null; await arsivListele(); openModal('arsiv-modal');
+}
+async function arsivListele(){
+  const pid=seciliPersonelId; if(!pid) return;
+  showLoading();
+  try{
+    const [izinler,mazeretler,raporlar]=await Promise.all([dbGet('izinler',{personel_id:pid}),dbGet('mazeret',{personel_id:pid}),dbGet('raporlar',{personel_id:pid})]);
+    const tbody=document.getElementById('arsiv-tbody'); tbody.innerHTML='';
+    const kayitlar=[];
+    izinler.forEach(i=>{const isb=new Date(parseTarih(i.bitis));isb.setDate(isb.getDate()+1);kayitlar.push({id:i.id,tur:'YILLIK',bas:i.baslangic,bit:i.bitis,isb:formatTarih(isb),gun:i.harcanan_gun,ac:'Yıllık İzin'});});
+    mazeretler.forEach(m=>{kayitlar.push({id:m.id,tur:'MAZERET',bas:m.baslangic,bit:m.bitis,isb:'-',gun:m.gun_sayisi,ac:m.aciklama||'-'});});
+    raporlar.forEach(r=>{const isb=new Date(parseTarih(r.bitis));isb.setDate(isb.getDate()+1);kayitlar.push({id:r.id,tur:'RAPOR',bas:r.baslangic,bit:r.bitis,isb:formatTarih(isb),gun:r.gun_sayisi,ac:r.aciklama||'-'});});
+    kayitlar.forEach(k=>{
+      const rk=k.tur==='YILLIK'?'#1565C0':k.tur==='MAZERET'?'#00796B':'#546E7A';
+      const tr=document.createElement('tr'); tr.style.cursor='pointer'; tr.dataset.id=k.id; tr.dataset.tur=k.tur;
+      tr.innerHTML=`<td>${k.id}</td><td><span class="badge" style="background:${rk};color:white">${k.tur}</span></td><td style="font-family:var(--mono)">${k.bas}</td><td style="font-family:var(--mono)">${k.bit}</td><td style="font-family:var(--mono)">${k.isb}</td><td style="font-weight:700">${k.gun}</td><td>${k.ac}</td>`;
+      tr.onclick=()=>{arsivSecilenId={id:k.id,tur:k.tur};document.querySelectorAll('#arsiv-tbody tr').forEach(r=>r.classList.remove('sel-row'));tr.classList.add('sel-row');};
+      tbody.appendChild(tr);
+    });
+  }finally{hideLoading();}
+}
+async function arsivSil(){
+  if(!arsivSecilenId){alert('Lütfen silmek istediğiniz kaydı seçin!');return;}
+  if(arsivSecilenId.tur!=='YILLIK'){alert('Yalnızca yıllık izinler buradan silinebilir.');return;}
+  if(!confirm('Yıllık izin silinsin mi? Bakiye iade edilir.')) return;
+  showLoading();
+  try{
+    const izId=arsivSecilenId.id;
+    const {data:iz}=await sb.from('izinler').select('*').eq('id',izId).single();
+    const {data:detay}=await sb.from('izin_detay').select('*').eq('izin_id',izId);
+    if(detay){
+      for(const d of detay){
+        const {data:dev}=await sb.from('devir_izinler').select('kalan_gun').eq('id',d.devir_id).single();
+        if(dev) await sb.from('devir_izinler').update({kalan_gun:dev.kalan_gun+d.miktar}).eq('id',d.devir_id);
+      }
+    }
+    await dbDelete('izinler',izId);
+    await logYaz(`İZİN İPTAL: ID ${izId} - ${iz?.baslangic}/${iz?.bitis} (${iz?.harcanan_gun} gün iade edildi)`);
+    arsivSecilenId=null; await arsivListele(); await listele();
+  }catch(e){alert(e.message);}finally{hideLoading();}
+}
+
+// ═══════════════════════════════════════════
+//  DEVİR
+// ═══════════════════════════════════════════
+let devirSecilenId=null;
+async function devirPenceresi(){
+  if(!seciliPersonelId){alert('Lütfen bir personel seçin!');return;}
+  const {data:p}=await sb.from('personel').select('isim').eq('id',seciliPersonelId).single();
+  document.getElementById('devir-personel-adi').textContent=`↩ ${p?.isim}`;
+  document.getElementById('devir-yil').value=SU_AN_YIL-1;
+  devirSecilenId=null; await devirListele(); openModal('devir-modal');
+}
+async function devirListele(){
+  const data=await dbGet('devir_izinler',{personel_id:seciliPersonelId});
+  const tbody=document.getElementById('devir-tbody'); tbody.innerHTML='';
+  [...data].sort((a,b)=>b.yil-a.yil).forEach(d=>{
+    const tr=document.createElement('tr'); tr.style.cursor='pointer';
+    tr.innerHTML=`<td>${d.id}</td><td>${d.yil}</td><td style="font-weight:700">${d.kalan_gun}</td>`;
+    tr.onclick=()=>{devirSecilenId=d.id;document.querySelectorAll('#devir-tbody tr').forEach(r=>r.classList.remove('sel-row'));tr.classList.add('sel-row');};
+    tbody.appendChild(tr);
+  });
+}
+async function devirEkle(){
+  const yil=parseInt(document.getElementById('devir-yil').value);
+  const gun=parseInt(document.getElementById('devir-gun').value);
+  if(!yil||isNaN(gun)){alert('Yıl ve gün alanlarını doldurun!');return;}
+  showLoading();
+  try{
+    await dbInsert('devir_izinler',{personel_id:seciliPersonelId,yil,kalan_gun:gun});
+    const {data:p}=await sb.from('personel').select('isim').eq('id',seciliPersonelId).single();
+    await logYaz(`DEVİR EKLEME: ${p?.isim} - ${yil} yılı için ${gun} gün`);
+    await devirListele(); await listele();
+  }catch(e){alert(e.message);}finally{hideLoading();}
+}
+async function devirSil(){
+  if(!devirSecilenId){alert('Lütfen silinecek deviri seçin!');return;}
+  const {data:d}=await sb.from('devir_izinler').select('yil,kalan_gun').eq('id',devirSecilenId).single();
+  if(!confirm(`${d?.yil} yılına ait ${d?.kalan_gun} günlük devir silinsin mi?`)) return;
+  showLoading();
+  try{await dbDelete('devir_izinler',devirSecilenId);devirSecilenId=null;await devirListele();await listele();}catch(e){alert(e.message);}finally{hideLoading();}
+}
+
+// ═══════════════════════════════════════════
+//  MAZERET
+// ═══════════════════════════════════════════
+let mazSecilenId=null;
+async function mazeretPenceresi(){
+  if(!seciliPersonelId){alert('Lütfen bir personel seçin!');return;}
+  const {data:p}=await sb.from('personel').select('isim').eq('id',seciliPersonelId).single();
+  document.getElementById('mazeret-personel-adi').textContent=`📋 ${p?.isim}`;
+  const bg=formatTarih(bugun()); document.getElementById('maz-bas').value=bg; document.getElementById('maz-bit').value=bg;
+  mazSecilenId=null; await mazListele(); openModal('mazeret-modal');
+}
+async function mazListele(){
+  const data=await dbGet('mazeret',{personel_id:seciliPersonelId});
+  const tbody=document.getElementById('maz-tbody'); tbody.innerHTML='';
+  [...data].sort((a,b)=>b.id-a.id).forEach(m=>{
+    const tr=document.createElement('tr'); tr.style.cursor='pointer';
+    tr.innerHTML=`<td>${m.id}</td><td style="font-family:var(--mono)">${m.baslangic}</td><td style="font-family:var(--mono)">${m.bitis}</td><td>${m.gun_sayisi}</td><td>${m.aciklama||'-'}</td>`;
+    tr.onclick=()=>{mazSecilenId=m.id;document.querySelectorAll('#maz-tbody tr').forEach(r=>r.classList.remove('sel-row'));tr.classList.add('sel-row');};
+    tbody.appendChild(tr);
+  });
+}
+async function mazeretEkle(){
+  const bas=document.getElementById('maz-bas').value.trim(), bit=document.getElementById('maz-bit').value.trim(), ac=document.getElementById('maz-ac').value.trim().toUpperCase();
+  if(!/^\d{2}\/\d{2}\/\d{4}$/.test(bas)||!/^\d{2}\/\d{2}\/\d{4}$/.test(bit)){alert('Format GG/AA/YYYY olmalı');return;}
+  const b=parseTarih(bas),bt=parseTarih(bit); if(bt<b){alert('Bitiş tarihi başlangıçtan önce olamaz!');return;}
+  const gun=Math.round((bt-b)/86400000)+1; showLoading();
+  try{await dbInsert('mazeret',{personel_id:seciliPersonelId,baslangic:bas,bitis:bit,gun_sayisi:gun,aciklama:ac});document.getElementById('maz-ac').value='';await mazListele();await listele();}catch(e){alert(e.message);}finally{hideLoading();}
+}
+async function mazeretSil(){
+  if(!mazSecilenId){alert('Lütfen bir kayıt seçin!');return;}
+  if(!confirm('Mazeret izni silinsin mi?')) return;
+  showLoading();
+  try{await dbDelete('mazeret',mazSecilenId);mazSecilenId=null;await mazListele();await listele();}catch(e){alert(e.message);}finally{hideLoading();}
+}
+
+// ═══════════════════════════════════════════
+//  RAPOR
+// ═══════════════════════════════════════════
+let rapSecilenId=null;
+async function raporPenceresi(){
+  if(!seciliPersonelId){alert('Lütfen bir personel seçin!');return;}
+  const {data:p}=await sb.from('personel').select('isim').eq('id',seciliPersonelId).single();
+  document.getElementById('rapor-personel-adi').textContent=`🏥 ${p?.isim}`;
+  const bg=formatTarih(bugun()); document.getElementById('rap-bas').value=bg; document.getElementById('rap-bit').value=bg;
+  rapSecilenId=null; await rapListele(); openModal('rapor-modal');
+}
+async function rapListele(){
+  const data=await dbGet('raporlar',{personel_id:seciliPersonelId});
+  const tbody=document.getElementById('rap-tbody'); tbody.innerHTML='';
+  [...data].sort((a,b)=>b.id-a.id).forEach(r=>{
+    let isb='-'; try{const d=parseTarih(r.bitis);d.setDate(d.getDate()+1);isb=formatTarih(d);}catch{}
+    const tr=document.createElement('tr'); tr.style.cursor='pointer';
+    tr.innerHTML=`<td>${r.id}</td><td style="font-family:var(--mono)">${r.baslangic}</td><td style="font-family:var(--mono)">${r.bitis}</td><td style="font-family:var(--mono)">${isb}</td><td>${r.gun_sayisi}</td><td>${r.aciklama||'-'}</td>`;
+    tr.onclick=()=>{rapSecilenId=r.id;document.querySelectorAll('#rap-tbody tr').forEach(r2=>r2.classList.remove('sel-row'));tr.classList.add('sel-row');};
+    tbody.appendChild(tr);
+  });
+}
+async function raporEkle(){
+  const bas=document.getElementById('rap-bas').value.trim(), bit=document.getElementById('rap-bit').value.trim(), ac=document.getElementById('rap-ac').value.trim().toUpperCase();
+  if(!/^\d{2}\/\d{2}\/\d{4}$/.test(bas)||!/^\d{2}\/\d{2}\/\d{4}$/.test(bit)){alert('Format GG/AA/YYYY olmalı');return;}
+  const b=parseTarih(bas),bt=parseTarih(bit); if(bt<b){alert('Bitiş tarihi başlangıçtan önce olamaz!');return;}
+  const gun=Math.round((bt-b)/86400000)+1; showLoading();
+  try{await dbInsert('raporlar',{personel_id:seciliPersonelId,baslangic:bas,bitis:bit,gun_sayisi:gun,aciklama:ac});document.getElementById('rap-ac').value='';await rapListele();await listele();}catch(e){alert(e.message);}finally{hideLoading();}
+}
+async function raporSil(){
+  if(!rapSecilenId){alert('Lütfen bir kayıt seçin!');return;}
+  if(!confirm('Rapor silinsin mi?')) return;
+  showLoading();
+  try{await dbDelete('raporlar',rapSecilenId);rapSecilenId=null;await rapListele();await listele();}catch(e){alert(e.message);}finally{hideLoading();}
+}
+
+// ═══════════════════════════════════════════
+//  EXCEL AKTAR
+// ═══════════════════════════════════════════
+async function excelAktar(){
+  showLoading();
+  try{
+    const [personel,izinler,devir,raporlar]=await Promise.all([dbGet('personel'),dbGet('izinler'),dbGet('devir_izinler'),dbGet('raporlar')]);
+    const yil=SU_AN_YIL;
+    const satirlar=[['ID','SİCİL','AD SOYAD','HAKEDİŞ TARİHİ','STATÜ','VARDİYA','ANA HAK','TOPLAM DEVİR','KULLANILAN','RAPOR','KALAN']];
+    for(const p of [...personel].sort((a,b)=>a.isim.localeCompare(b.isim))){
+      const devGrup=p.statu==='Memur'?devir.filter(d=>d.personel_id===p.id&&d.yil>=yil-1):devir.filter(d=>d.personel_id===p.id);
+      const devTop=devGrup.reduce((s,d)=>s+d.kalan_gun,0);
+      const kul=izinler.filter(i=>i.personel_id===p.id).reduce((s,i)=>s+i.harcanan_gun,0);
+      const rap=raporlar.filter(r=>r.personel_id===p.id).reduce((s,r)=>s+r.gun_sayisi,0);
+      satirlar.push([p.id,p.sicil_no,p.isim,p.hakedis_tarihi||'',p.statu,p.vardiya,p.toplam_hak,devTop,kul,rap,devTop]);
+    }
+    const csv=satirlar.map(r=>r.map(c=>'"'+(String(c||'').replace(/"/g,'""'))+'"').join(',')).join('\n');
+    const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download='itfaiye_personel.csv'; a.click(); URL.revokeObjectURL(url);
+  }finally{hideLoading();}
+}
+
+// ═══════════════════════════════════════════
+//  VERİ DIŞA / İÇE AKTAR
+// ═══════════════════════════════════════════
+async function veriAktar(){
+  showLoading();
+  try{
+    const [p,iz,dev,rap,maz,hak,det,bay]=await Promise.all([dbGet('personel'),dbGet('izinler'),dbGet('devir_izinler'),dbGet('raporlar'),dbGet('mazeret'),dbGet('hakedis_takip'),dbGet('izin_detay'),dbGet('bayramlar')]);
+    const yedek={versiyon:'2.0',tarih:new Date().toISOString(),itf_personel:p,itf_izinler:iz,itf_devir:dev,itf_raporlar:rap,itf_mazeret:maz,itf_hakedis:hak,itf_iz_det:det,itf_bayramlar:bay};
+    const blob=new Blob([JSON.stringify(yedek,null,2)],{type:'application/json;charset=utf-8'});
+    const url=URL.createObjectURL(blob), tarihStr=new Date().toLocaleDateString('tr-TR').replace(/\./g,'-');
+    const a=document.createElement('a'); a.href=url; a.download=`itfaiye_yedek_${tarihStr}.json`; a.click(); URL.revokeObjectURL(url);
+    await logYaz('Veri yedeği alındı (Supabase).');
+  }finally{hideLoading();}
+}
+async function veriYukle(event){
+  const dosya=event.target.files[0]; if(!dosya) return;
+  const okuyucu=new FileReader();
+  okuyucu.onload=async function(e){
+    try{
+      const yedek=JSON.parse(e.target.result);
+      if(!yedek.itf_personel){alert('Geçersiz yedek dosyası!');return;}
+      if(!confirm(`Bu dosyada ${yedek.itf_personel.length} personel var.\n\nMevcut tüm veriler SİLİNECEK ve yüklenecek.\n\nEmin misiniz?`)){event.target.value='';return;}
+      showLoading();
+      // Sil (ters bağımlılık sırasıyla)
+      for(const t of ['izin_detay','mazeret','raporlar','hakedis_takip','izinler','devir_izinler','personel','bayramlar','sistem_logs'])
+        await sb.from(t).delete().neq('id',0);
+      // Personel ekle, ID eşlemesi tut
+      const pMap={};
+      for(const p of (yedek.itf_personel||[])){
+        const {id,...rest}=p; const {data}=await sb.from('personel').insert(rest).select().single(); pMap[id]=data.id;
+      }
+      const izMap={};
+      for(const i of (yedek.itf_izinler||[])){
+        const {id,...rest}=i; const {data}=await sb.from('izinler').insert({...rest,personel_id:pMap[rest.personel_id]}).select().single(); izMap[id]=data.id;
+      }
+      const devMap={};
+      for(const d of (yedek.itf_devir||[])){
+        const {id,...rest}=d; const {data}=await sb.from('devir_izinler').insert({...rest,personel_id:pMap[rest.personel_id]}).select().single(); devMap[id]=data.id;
+      }
+      for(const d of (yedek.itf_iz_det||[])){
+        const {id,...rest}=d; await sb.from('izin_detay').insert({...rest,izin_id:izMap[rest.izin_id],devir_id:devMap[rest.devir_id]});
+      }
+      for(const r of (yedek.itf_raporlar||[])){const {id,...rest}=r;await sb.from('raporlar').insert({...rest,personel_id:pMap[rest.personel_id]});}
+      for(const m of (yedek.itf_mazeret||[])){const {id,...rest}=m;await sb.from('mazeret').insert({...rest,personel_id:pMap[rest.personel_id]});}
+      for(const h of (yedek.itf_hakedis||[])){const {id,...rest}=h;try{await sb.from('hakedis_takip').insert({...rest,personel_id:pMap[rest.personel_id]});}catch{}}
+      for(const b of (yedek.itf_bayramlar||[])){const {id,...rest}=b;try{await sb.from('bayramlar').insert(rest);}catch{}}
+      await logYaz(`Yedek yüklendi: ${yedek.itf_personel.length} personel Supabase'e aktarıldı.`);
+      await listele(); await bayramListele();
+      alert(`✓ Yedek başarıyla yüklendi!\n${yedek.itf_personel.length} personel aktarıldı.`);
+    }catch(err){alert('Hata: '+err.message);}finally{hideLoading();event.target.value='';}
+  };
+  okuyucu.readAsText(dosya,'utf-8');
+}
+
+// ═══════════════════════════════════════════
+//  GERÇEK ZAMANLI SENKRON
+// ═══════════════════════════════════════════
+const badge=document.getElementById('conn-badge');
+let reloadTimer=null;
+function scheduleReload(){clearTimeout(reloadTimer);reloadTimer=setTimeout(()=>listele(),1000);}
+
+sb.channel('itfaiye-sync')
+  .on('postgres_changes',{event:'*',schema:'public',table:'personel'},scheduleReload)
+  .on('postgres_changes',{event:'*',schema:'public',table:'izinler'},scheduleReload)
+  .on('postgres_changes',{event:'*',schema:'public',table:'devir_izinler'},scheduleReload)
+  .on('postgres_changes',{event:'*',schema:'public',table:'raporlar'},scheduleReload)
+  .subscribe(status=>{
+    if(status==='SUBSCRIBED'){badge.textContent='🟢 Çevrimiçi';badge.style.background='rgba(76,175,80,.3)';}
+    else{badge.textContent='🔴 Bağlantı yok';badge.style.background='rgba(244,67,54,.3)';}
+  });
+
+// ═══════════════════════════════════════════
+//  BAŞLANGIÇ
+// ═══════════════════════════════════════════
+async function init(){
+  calCiz();
+  await Promise.all([listele(),bayramListele(),renderLog()]);
+}
+init();
+</script>
 </body>
 </html>
